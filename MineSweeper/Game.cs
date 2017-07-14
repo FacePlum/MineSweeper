@@ -5,9 +5,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Windows.Forms;
 
 namespace MineSweeper
 {
+    class Point
+    {
+        public int x, y;
+        public Point(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
     class Game
     {
         private int bombsCount;
@@ -22,7 +33,7 @@ namespace MineSweeper
         private int fieldsUncovered;
         Stopwatch timer = new Stopwatch();
 
-        public Game(int bombs, int width,int height, MineSweeper ms) // bombs < size^2 will not be checked as it's provided by programmer
+        public Game(int bombs, int width,int height, MineSweeper ms) 
         {
             timer.Start();
 
@@ -33,58 +44,120 @@ namespace MineSweeper
             mapWidth = width;
             mapHeight = height;
 
-            bombMap = new bool[mapHeight, mapWidth];
+            bombMap = new bool[mapWidth, mapHeight];
             fillMapWithValue(false, bombMap);
 
-            exploredMap = new bool[mapHeight, mapWidth];
+            exploredMap = new bool[mapWidth, mapHeight];
             fillMapWithValue(false, exploredMap);
 
             fillRandomBombs();
 
-            bombsNear = new byte[mapHeight, mapWidth];
+            bombsNear = new byte[mapWidth, mapHeight];
             setNearValues();
 
             this.ms = ms;
         }
 
-        public void setLevel(byte level)
+        public void setLevel(byte level) // difficulty level
         {
             this.level = level;
         }
 
-        public bool[,] getMap()
+        public bool[,] getMap() // returns map with bomb placement
         {
             return bombMap;
         }
 
-        public int getMapWidth()
+        public int getMapWidth()    // returns game width in blocks
         {
             return mapWidth;
         }
-        public int getMapHeight()
+        public int getMapHeight() // returns game height in blocks
         {
             return mapHeight;
         }
-        public double getElapsedSeconds()
+        public double getElapsedSeconds()   // returns elapsed seconds since the game began
         {
             double elapsedSeconds = (double)timer.ElapsedMilliseconds / (double)1000;
             return elapsedSeconds;
         }
 
-        public int getBombsCount()
+        public int getBombsCount() // returns total number of bombs on map
         {
             return bombsCount;
         }
-        public int getBombsNear(int i, int j)
+        public int getBombsNear(int x, int y) // returns the quantity of bombs that surround a field
         {
-            return bombsNear[i, j];
+            return bombsNear[x, y];
         }
-        public int getUncoveredFields()
+        public int getUncoveredFields() // returns the quantity of uncovered fields
         {
             return fieldsUncovered;
         }
-        
-        void fillRandomBombs()
+        public void uncoverBFS(int xstart, int ystart) // uses BFS algorithm to uncover all "0" fields near "0" field player has chosen
+        {
+            Queue<Point> toCheck = new Queue<Point>();
+            toCheck.Enqueue(new Point(xstart, ystart));
+            exploredMap[xstart, ystart] = true;
+            bool up, down, left, right;
+            up = down = left = right = true;
+
+            while(toCheck.Count != 0)
+            {
+                Point nowChecked = toCheck.Dequeue();
+                
+                int x = nowChecked.x;
+                int y = nowChecked.y;
+
+                ms.printZero(x, y);
+                fieldsUncovered++;
+
+                if (y == 0)
+                    up = false;
+                if ((y + 1) / mapHeight == 1)
+                    down = false;
+                if (x % mapWidth == 0)
+                    left = false;
+                if (x % (mapWidth) == mapWidth-1)
+                    right = false;
+
+                if (up && !exploredMap[x,y-1] && bombsNear[x, y - 1] == 0){ 
+                    toCheck.Enqueue(new Point(x, y-1));
+                    exploredMap[x, y-1] = true;
+                }
+                if (up && left && !exploredMap[x - 1, y - 1] && bombsNear[x - 1, y - 1] == 0){
+                    toCheck.Enqueue(new Point(x - 1, y - 1));
+                    exploredMap[x - 1, y - 1] = true;
+                }
+                if (up && right && !exploredMap[x + 1, y - 1] && bombsNear[x + 1, y - 1] == 0){
+                    toCheck.Enqueue(new Point(x + 1, y - 1));
+                    exploredMap[x + 1, y - 1] = true;
+                }
+                if (left && !exploredMap[x-1,y] && bombsNear[x - 1, y] == 0){
+                    toCheck.Enqueue(new Point(x - 1, y));
+                    exploredMap[x - 1, y] = true;
+                }
+                if (right && !exploredMap[x + 1, y] && bombsNear[x + 1, y] == 0){
+                    toCheck.Enqueue(new Point(x + 1, y));
+                    exploredMap[x + 1, y] = true;
+                }
+                if (down && left && !exploredMap[x - 1, y + 1] && bombsNear[x - 1, y + 1] == 0){
+                    toCheck.Enqueue(new Point(x - 1, y + 1));
+                    exploredMap[x - 1, y + 1] = true;
+                }
+                if (down && right && !exploredMap[x + 1, y + 1] && bombsNear[x + 1, y + 1] == 0){
+                    toCheck.Enqueue(new Point(x + 1, y + 1));
+                    exploredMap[x + 1, y + 1] = true;
+                }
+                if (down && !exploredMap[x, y + 1] && bombsNear[x, y + 1] == 0){
+                    toCheck.Enqueue(new Point(x, y + 1));
+                    exploredMap[x, y + 1] = true;
+                }
+                up = down = left = right = true;
+            }
+        }
+
+        void fillRandomBombs() // fills map with bombs on random places
         {
             ArrayList freePositions = new ArrayList();
             for(int i = 0; i < mapWidth * mapHeight;i++)
@@ -93,83 +166,80 @@ namespace MineSweeper
             for(int i = 0; i < bombsCount; i++){
                 int nextRan = ran.Next() % (mapWidth * mapHeight - i);
                 int chosenPosition = (int)freePositions[nextRan];
-                freePositions.RemoveAt(nextRan);
-
-                int xpos = chosenPosition % mapHeight;
-                int ypos = chosenPosition / mapHeight;
+                int xpos = chosenPosition % mapWidth;
+                int ypos = chosenPosition / mapWidth;
                 bombMap[xpos, ypos] = true;
+                freePositions.RemoveAt(nextRan);
             }
         }
 
-        void fillMapWithValue(bool val, bool[,] map)
+        void fillMapWithValue(bool val, bool[,] map)   
         {
-            for (int i = 0; i < mapHeight; i++)
-                for (int j = 0; j < mapWidth; j++)
-                    map[i, j] = val;
+            for (int x = 0; x <mapWidth ; x++)
+                for (int y = 0; y < mapHeight; y++)
+                    map[x, y] = val;
         }
 
-        public void checkField(int i, int j)
+        public void checkField(int x, int y) // checks the field player has chosen and does action connected with it
         {
-            if (exploredMap[i, j] == false && bombMap[i, j] == true) // lose - player stepped on a bomb
-            {
+            if (exploredMap[x, y] == false && bombMap[x, y] == true) { // lose - player stepped on a bomb
                 ms.endGame();
+                MessageBox.Show("Game Over!");
             }
-            else if(exploredMap[i, j] == false && bombMap[i, j] == false) // empty field
-            {
-                exploredMap[i, j] = true;
+            else if(exploredMap[x, y] == false && bombMap[x, y] == false) { // player stepped on an empty field
+                exploredMap[x, y] = true;
                 fieldsUncovered++;
-                ms.printField(i, j);
+                ms.printField(x, y);
             }
         }
-        void setNearValues()    // on new game
+
+        void setNearValues()    // Fills every field with quantity of bombs that are surrounding that field
         {
             //cleanup
-            for (int i = 0; i < mapHeight; i++)
-                for (int j = 0; j < mapWidth; j++)
-                    bombsNear[i, j] = 0;
+            for (int x = 0; x < mapWidth; x++)
+                for (int y = 0; y < mapHeight; y++)
+                    bombsNear[x, y] = 0;
             //cleanup
 
-            for (int i = 0; i < mapHeight; i++)
-            {
-                for(int j = 0; j < mapWidth; j++)
-                {
+            for (int x = 0; x < mapWidth; x++){
+                for(int y = 0; y < mapHeight; y++){
                     bool up, down, left, right;
                     up = down = right = left = true;
-                    if(bombMap[i,j]) { // setting also values for bomb fields, although unnecessary, it would take more time to exclude them
-                        if (i == 0)
+                    if(bombMap[x,y]) { // setting also values for fields with bombs, although unnecessary, it would take more time to exclude them
+                        if (y == 0)
                             up = false;
-                        if ((i + 1) / mapHeight == 1)
+                        if ((y + 1) / mapHeight == 1)
                             down = false;
-                        if (j % mapWidth == 0)
+                        if (x % mapWidth == 0)
                             left = false;
-                        if (j % (mapWidth - 1) == 0)
+                        if (x % (mapWidth) == mapWidth - 1)
                             right = false;
 
                         if (up)
-                            bombsNear[i - 1, j]++;
+                            bombsNear[x, y-1]++;
                         if (down)
-                            bombsNear[i + 1, j]++;
+                            bombsNear[x, y+1]++;
                         if (left)
-                            bombsNear[i, j - 1]++;
+                            bombsNear[x-1, y]++;
                         if (right)
-                            bombsNear[i, j + 1]++;
+                            bombsNear[x + 1, y]++;
                         if (up && left)
-                            bombsNear[i - 1, j - 1]++;
+                            bombsNear[x - 1, y - 1]++;
                         if (up && right)
-                            bombsNear[i - 1, j + 1]++;
+                            bombsNear[x + 1, y - 1]++;
                         if (down && left)
-                            bombsNear[i + 1, j - 1]++;
+                            bombsNear[x - 1, y + 1]++;
                         if (down && right)
-                            bombsNear[i + 1, j + 1]++;
+                            bombsNear[x + 1, y + 1]++;
                     }
                 }
             }
 
         }
 
-        public bool visited(int i, int j)
+        public bool visited(int x, int y) // checks whether given field was visited(if it's uncovered)
         {
-            return exploredMap[i, j];
+            return exploredMap[x, y];
         }
     } // class
 } // namespace

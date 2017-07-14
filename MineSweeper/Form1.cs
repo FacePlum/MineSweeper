@@ -41,43 +41,41 @@ namespace MineSweeper
             // clean up block
             if (gameOver)
             {
-                for (int i = 0; i < game.getMapHeight(); i++)
+                for (int x = 0; x < game.getMapWidth(); x++)
                 {
-                    for (int j = 0; j < game.getMapWidth(); j++)
+                    for (int y = 0; y < game.getMapHeight(); y++)
                     {
-                        this.Controls.Remove(imageMap[i, j]);
+                        this.Controls.Remove(imageMap[x, y]);
                     }
                 }
             }
-            // clean up block end
+            // clean up block
 
             int bombs = 0;
             int X = 0;
             int Y = 0;
-            if(levelChosen == 0)
-            {
+
+            if(levelChosen == 0){
                 bombs = 10;
                 X = 10;
                 Y = 8;
             }
-            else if(levelChosen == 1)
-            {
+            else if(levelChosen == 1){
                 bombs = 30;
                 X = 12;
                 Y = 10;
             }
-            else if(levelChosen == 2)
-            {
-                bombs = 100;
+            else if(levelChosen == 2){
+                bombs = 70;
                 X = 20;
                 Y = 15;
             }
-            
+
             game = new Game(bombs,X,Y, this);
             
             this.SetBounds(this.Left, this.Top, X *fieldWidth + 2* margin, Y * fieldWidth + 2 * margin + 30);
 
-            imageMap = new Square[game.getMapHeight(),game.getMapWidth()];
+            imageMap = new Square[game.getMapWidth(),game.getMapHeight()];
 
             b_newgame.Visible = false;
             b_easy.Visible = false;
@@ -88,38 +86,43 @@ namespace MineSweeper
             printMap();
             gameOver = false;
         }
-        public void printBomb(int i, int j)
+        public void printBomb(int x, int y)
         {
-            imageMap[i, j].ImageLocation = startupPath + bombPath;
+            imageMap[x, y].ImageLocation = startupPath + bombPath;
         }
-        public void printField(int i, int j)
+        public void printField(int x, int y)
         {
-            imageMap[i, j].ImageLocation = startupPath + "\\" + game.getBombsNear(i, j).ToString() + extension;
+            imageMap[x, y].ImageLocation = startupPath + "\\" + game.getBombsNear(x, y).ToString() + extension;
+        }
+        public void printZero(int x, int y)
+        {
+            imageMap[x, y].ImageLocation = startupPath + "\\0.png";
         }
         private void printMap()
         {
             bool[,] map = game.getMap();
 
             System.Drawing.Image img = System.Drawing.Image.FromFile(startupPath + fieldImagePath);  // to determine dimensions
+
             fieldWidth = img.Width;
             fieldHeight = img.Height;
 
             int height = game.getMapHeight();
             int width = game.getMapWidth();
 
-            for (int i = 0; i < height; i++){
-                for (int j = 0; j < width; j++){
-                    imageMap[i, j] = new Square();
-                    imageMap[i, j].Image = img;
-                    imageMap[i, j].Width = fieldWidth;
-                    imageMap[i, j].Height = fieldHeight;
-                    imageMap[i, j].Location = new Point(margin + fieldWidth * j, margin + fieldHeight * i);
-                    imageMap[i, j].MouseEnter += infield;
-                    imageMap[i, j].MouseLeave += outfield;
-                    imageMap[i, j].MouseClick += clickfield;
-                    imageMap[i, j].i = i;
-                    imageMap[i, j].j = j;
-                    this.Controls.Add(imageMap[i, j]);
+            for (int x = 0; x < width; x++){
+                for (int y = 0; y < height; y++){
+                    imageMap[x, y] = new Square();
+                    imageMap[x, y].Image = img;
+                    imageMap[x, y].Width = fieldWidth;
+                    imageMap[x, y].Height = fieldHeight;
+                    imageMap[x, y].Location = new System.Drawing.Point(margin + fieldWidth * x, margin + fieldHeight * y);
+                    imageMap[x, y].MouseEnter += infield;
+                    imageMap[x, y].MouseLeave += outfield;
+                    imageMap[x, y].MouseClick += clickfield;
+                    imageMap[x, y].x = x;
+                    imageMap[x, y].y = y;
+                    this.Controls.Add(imageMap[x, y]);
                 }
             }
         }
@@ -127,20 +130,20 @@ namespace MineSweeper
         {
             uncoverMap();
             gameOver = true;
-            b_newgame.Location = new Point(100, 10);
+
+            b_newgame.Location = new System.Drawing.Point(100, 10);
+            b_easy.Location = new System.Drawing.Point(10, 40);
+            b_medium.Location = new System.Drawing.Point(70, 40);
+            b_hard.Location = new System.Drawing.Point(130, 40);
+            l_level.Location = new System.Drawing.Point(190, 43);
+
             b_newgame.Visible = true;
-
-            b_easy.Location = new Point(10, 40);
-            b_medium.Location = new Point(70, 40);
-            b_hard.Location = new Point(130, 40);
-            l_level.Location = new Point(190, 43);
-
             b_newgame.Visible = true;
             b_easy.Visible = true;
             b_medium.Visible = true;
             b_hard.Visible = true;
             l_level.Visible = true; ;
-            MessageBox.Show("Game Over!");
+            
         }
         public void uncoverMap()
         {
@@ -148,17 +151,16 @@ namespace MineSweeper
             int height = game.getMapHeight();
             int width = game.getMapWidth();
 
-            for (int i = 0; i < height; i++)
-            {
-                for (int j = 0; j < width; j++)
-                {
-                    if (bombMap[i, j])
-                        imageMap[i, j].ImageLocation = startupPath + bombPath;
+            for (int x = 0; x < width; x++){
+                for (int y = 0; y < height; y++){
+                    if (bombMap[x, y])
+                        imageMap[x, y].ImageLocation = startupPath + bombPath;
                     else
-                        imageMap[i, j].ImageLocation = startupPath + visitedFieldPath;
+                        imageMap[x, y].ImageLocation = startupPath + visitedFieldPath;
                 }
             }
        }
+
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -167,14 +169,17 @@ namespace MineSweeper
         private void clickfield(object sender, EventArgs e) // when clicking on a mine field
         {
             if (!gameOver){
-                int i = ((Square)sender).i;
-                int j = ((Square)sender).j;
-                game.checkField(i, j);
+                int x = ((Square)sender).x;
+                int y = ((Square)sender).y;
+                game.checkField(x, y);
+                if (game.getBombsNear(x, y) == 0)
+                    game.uncoverBFS(x, y);
             }
             int height = game.getMapHeight();
             int width = game.getMapWidth();
-            if (height * width - game.getUncoveredFields() == game.getBombsCount()){ // win
+            if (height * width - game.getUncoveredFields() == game.getBombsCount() + 1){ // win
                 MessageBox.Show("You won! Your game took " + game.getElapsedSeconds().ToString() + " seconds.");
+                endGame();
                 b_newgame.Show();
                 uncoverMap();
             }
@@ -182,13 +187,13 @@ namespace MineSweeper
 
         private void infield(object sender, EventArgs e) // on mouse in field
         {
-            if(!game.visited(     ((Square)sender).i, ((Square)sender).j) && !gameOver    )
+            if(!game.visited(   ((Square)sender).x, ((Square)sender).y) && !gameOver    )
                 ((Square)sender).ImageLocation = startupPath + hoverFieldImagePath;
         }
 
         private void outfield(object sender, EventArgs e) // on mouse out of field
         {
-            if (!game.visited(((Square)sender).i, ((Square)sender).j) && !gameOver)
+            if (!game.visited(  ((Square)sender).x, ((Square)sender).y) && !gameOver)
                 ((Square)sender).ImageLocation = startupPath + fieldImagePath;
         }
 

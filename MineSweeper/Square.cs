@@ -9,6 +9,6 @@ namespace MineSweeper
 {
     class Square : PictureBox
     {
-       public int i, j;
+       public int x, y;
     }
 }
