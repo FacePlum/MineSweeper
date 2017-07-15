@@ -22,16 +22,17 @@ namespace MineSweeper
     class Game
     {
         private int bombsCount;
-        private int mapWidth;
-        private int mapHeight;
-        private bool[,] bombMap;
-        private bool[,] exploredMap;
-        private byte[,] bombsNear; // toset 
+        private int mapWidth;  // units
+        private int mapHeight; // units
+        private int fieldsUncovered; // No. of fields uncovered(also automatically uncovered)
+        private bool[,] bombMap; 
+        private bool[,] exploredMap; // Info whether the field is uncovered
+        private byte[,] bombsNear; // No. of bombs surrounding a field(max. 8)
         private byte level;  // 0 - easy 1-medium 2-hard
         private MineSweeper ms;
         private Random ran = new Random();
-        private int fieldsUncovered;
         Stopwatch timer = new Stopwatch();
+        
 
         public Game(int bombs, int width,int height, MineSweeper ms) 
         {
@@ -112,6 +113,8 @@ namespace MineSweeper
                 ms.printZero(x, y);
                 fieldsUncovered++;
 
+                // Checking where can we move, probably a more effective way would be having
+                // an array with these parameters already defined, instead of doing math every time
                 if (y == 0)
                     up = false;
                 if ((y + 1) / mapHeight == 1)
@@ -121,6 +124,8 @@ namespace MineSweeper
                 if (x % (mapWidth) == mapWidth-1)
                     right = false;
 
+                // Checking if the fields we are able to visit are also
+                // surrounded by 0 bombs, if so, adding them to queue
                 if (up && !exploredMap[x,y-1] && bombsNear[x, y - 1] == 0){ 
                     toCheck.Enqueue(new Point(x, y-1));
                     exploredMap[x, y-1] = true;

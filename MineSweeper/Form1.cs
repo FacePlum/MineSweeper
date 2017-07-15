@@ -17,8 +17,8 @@ namespace MineSweeper
         private int fieldHeight;
         private Square[,] imageMap;
         String startupPath = System.IO.Directory.GetCurrentDirectory();
-        const String fieldImagePath = "/dicpic.png";
-        const String hoverFieldImagePath = "/dicpichover.png";
+        const String fieldImagePath = "/uncovfield.png";
+        const String hoverFieldImagePath = "/uncovfieldhover.png";
         const String visitedFieldPath = "/field.png";
         const String bombPath = "/bomb.png";
         const String extension = ".png";
@@ -86,7 +86,7 @@ namespace MineSweeper
             printMap();
             gameOver = false;
         }
-        public void printBomb(int x, int y)
+        public void printBomb(int x, int y) // printing limits itself to changing the pic location in already existing PictureBox
         {
             imageMap[x, y].ImageLocation = startupPath + bombPath;
         }
@@ -103,11 +103,10 @@ namespace MineSweeper
             bool[,] map = game.getMap();
 
             System.Drawing.Image img = System.Drawing.Image.FromFile(startupPath + fieldImagePath);  // to determine dimensions
-
-            fieldWidth = img.Width;
+            fieldWidth = img.Width; // px
             fieldHeight = img.Height;
 
-            int height = game.getMapHeight();
+            int height = game.getMapHeight(); // units
             int width = game.getMapWidth();
 
             for (int x = 0; x < width; x++){
@@ -142,7 +141,7 @@ namespace MineSweeper
             b_easy.Visible = true;
             b_medium.Visible = true;
             b_hard.Visible = true;
-            l_level.Visible = true; ;
+            l_level.Visible = true;
             
         }
         public void uncoverMap()
@@ -164,7 +163,7 @@ namespace MineSweeper
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            // components are added either graphically or dynamically on event
+            // components are added either in GUI or dynamically on event
         }
         private void clickfield(object sender, EventArgs e) // when clicking on a mine field
         {
@@ -190,30 +189,25 @@ namespace MineSweeper
             if(!game.visited(   ((Square)sender).x, ((Square)sender).y) && !gameOver    )
                 ((Square)sender).ImageLocation = startupPath + hoverFieldImagePath;
         }
-
         private void outfield(object sender, EventArgs e) // on mouse out of field
         {
             if (!game.visited(  ((Square)sender).x, ((Square)sender).y) && !gameOver)
                 ((Square)sender).ImageLocation = startupPath + fieldImagePath;
         }
-
         private void label1_Click(object sender, EventArgs e)
         {
 
         }
-
         private void button2_Click(object sender, EventArgs e)
         {
             levelChosen = 0;
             l_level.Text = "Easy";
         }
-
         private void button3_Click(object sender, EventArgs e)
         {
             levelChosen = 1;
             l_level.Text = "Medium";
         }
-
         private void button4_Click(object sender, EventArgs e)
         {
             levelChosen = 2;
