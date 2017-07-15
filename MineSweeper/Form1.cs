@@ -38,18 +38,11 @@ namespace MineSweeper
             System.Drawing.Image img = System.Drawing.Image.FromFile(startupPath + fieldImagePath);  // to determine dimensions
             fieldWidth = img.Width;
 
-            // clean up block
-            if (gameOver)
-            {
+            if (gameOver) // clean-up
                 for (int x = 0; x < game.getMapWidth(); x++)
-                {
                     for (int y = 0; y < game.getMapHeight(); y++)
-                    {
                         this.Controls.Remove(imageMap[x, y]);
-                    }
-                }
-            }
-            // clean up block
+
 
             int bombs = 0;
             int X = 0;
